@@ -26,46 +26,13 @@ CAREFUL_RM_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 # Try to use our version first
 CAREFUL_RM="${CAREFUL_RM_DIR}/careful_rm.py"
 
-# Get the *system* python, the python script should work everywhere, even on
-# old systems, by using system python by default, we can avoid possible issues
-# with faulty python installs.  This is not used if we end up using a pip
-# installed version
-
-# First pass
-if hash python 2>/dev/null; then
-    _PY=$(command -pv python 2>/dev/null || env -i sh -c "command -pv python")
-    declare -i _pyver
-    _pyver=$(${_PY} --version 2>&1 | sed 's/.* \([0-9]\).\([0-9]\).*/\1\2/')
-    # Try to get another version if the system version is ancient
-    if [[ _pyver -lt 26 ]]; then
-        _PY=$(command -v python)
-    fi
-    _pyver=$(${_PY} --version 2>&1 | sed 's/.* \([0-9]\).\([0-9]\).*/\1\2/')
-    if [[ _pyver -lt 26 ]]; then
-        # Failed try second pass
-        unset _PY
-    fi
-fi
-
-# Second pass
-if [ ! -x $_PY ]; then
-    _pos_paths=('/usr/local/bin/python3' '/usr/bin/python3' '/usr/local/bin/python' '/usr/bin/python' '/bin/python3' '/bin/python')
-    for _pth in "${pos_paths[@]}"; do
-        if [ -x $_pth ]; then
-            _pyver=$(${_PY} --version 2>&1 | sed 's/.* \([0-9]\).\([0-9]\).*/\1\2/')
-            if [[ _pyver -lt 26 ]]; then
-                _PY="$_pth"
-                break
-            fi
-        fi
-    done
-fi
-
-# Final check
-if [ ! -x $_PY ]; then
-    echo "No python found!! careful_rm will not work"
-    return 1
-    exit 1
+# Just use the python that is globally available.
+_PY="python"
+_pyver=$(${_PY} --version 2>&1 | sed 's/.* \([0-9]\).\([0-9]\).*/\1\2/')
+if [[ _pyver -lt 26 ]]; then
+  echo "[careful_rm] Fatal error: No compatible python was found!"
+  return 1
+  exit 1
 fi
 
 # Only use our careful_rm if it exists, if not, try for a version on the
